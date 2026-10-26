@@ -9,7 +9,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776AB?logo=python&logoColor=white)
 ![discord.py](https://img.shields.io/badge/discord.py-2.6-5865F2?logo=discord&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)
-![Status](https://img.shields.io/badge/status-complete%2C%20not%20maintained-lightgrey)
+![Status](https://img.shields.io/badge/status-shelved-lightgrey)
 
 A self-hosted Discord bot for moderation, automod, onboarding and leveling,
 written in Python with discord.py and SQLite.
@@ -21,8 +21,9 @@ written in Python with discord.py and SQLite.
 
 ## Project status
 
-Warden is a finished reference project. Its features work, it's tested, and CI passes, but
-it isn't under active development. Bug reports are welcome; new features are unlikely.
+Warden is shelved. Its features work, it's tested, and CI passes, but it has no active
+maintainer. It's left public for anyone who wants to use it, learn from it or build on it.
+Issues and pull requests are welcome, but replies may be slow.
 
 If you need a hosted bot for a community, established bots such as Carl-bot, Dyno and
 Discord's built-in AutoMod cover most of what Warden does. Warden is useful if you want:
@@ -308,7 +309,6 @@ uv run python scripts/render_previews.py  # regenerate the README images
 | CI: Docker | Image builds and exits with a clear error when no token is set |
 | CodeQL | Security and code quality, on push and weekly |
 | Dependency review | New vulnerable dependencies in pull requests |
-| Dependabot | Weekly updates for Python packages and GitHub Actions |
 | Release | On a `v*` tag: test, build, publish a GitHub release |
 | Stale | Closes issues and pull requests with no activity for 74 days |
 
