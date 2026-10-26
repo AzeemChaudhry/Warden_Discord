@@ -1,0 +1,26 @@
+name: Bug report
+description: Something in Warden isn't working as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what Warden did instead.
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Command or module
+      placeholder: e.g. /timeout, automod spam filter, level-up perks
+  - type: textarea
+    id: logs
+    attributes:
+      label: Terminal output
+      description: Paste the bot's log around the error. Remove your token if it appears.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Warden version or commit
