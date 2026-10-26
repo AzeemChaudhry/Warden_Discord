@@ -34,9 +34,6 @@ Discord's built-in AutoMod cover most of what Warden does. Warden is useful if y
 
 ## Features
 
-The images below show the messages Warden sends. They are drawn by
-`scripts/render_previews.py`, not screenshots.
-
 ### Moderation
 
 `/warn`, `/timeout`, `/untimeout`, `/kick`, `/ban` and `/unban`. Each action:
