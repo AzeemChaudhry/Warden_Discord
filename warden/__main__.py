@@ -1,5 +1,6 @@
 import logging
 import os
+import signal
 import sys
 
 from dotenv import load_dotenv
@@ -7,7 +8,14 @@ from dotenv import load_dotenv
 from .bot import BotConfig, Warden
 
 
+def _stop(signum: int, frame: object) -> None:
+    # discord.py shuts down cleanly on KeyboardInterrupt; treat SIGTERM
+    # (docker stop, systemd) the same way so the database closes properly.
+    raise KeyboardInterrupt
+
+
 def main() -> None:
+    signal.signal(signal.SIGTERM, _stop)
     load_dotenv()
     logging.basicConfig(
         level=logging.INFO,

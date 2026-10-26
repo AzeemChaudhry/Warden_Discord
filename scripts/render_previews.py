@@ -549,7 +549,7 @@ def banner() -> None:
         )
         x += cw + 12
     shield = "M 0 -58 L 48 -40 L 48 4 C 48 34 28 54 0 66 C -28 54 -48 34 -48 4 L -48 -40 Z"
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" font-family="{FONT}" role="img" aria-label="Warden: the all-in-one guardian for your Discord server">
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" font-family="{FONT}" role="img" aria-label="Warden: self-hosted moderation, automod, onboarding and leveling for Discord">
 <title>Warden</title>
 <defs>
   <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -571,7 +571,7 @@ def banner() -> None:
     <path d="M -20 2 L -4 18 L 24 -14" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
   <text x="480" y="178" font-size="96" font-weight="800" fill="#ffffff" letter-spacing="-2">Warden</text>
-  <text x="{w / 2}" y="258" font-size="26" fill="#b5bac1" text-anchor="middle">The all-in-one guardian for your Discord server</text>
+  <text x="{w / 2}" y="258" font-size="26" fill="#b5bac1" text-anchor="middle">Self-hosted moderation, automod, onboarding and leveling for Discord</text>
   {"".join(chip_svg)}
 </g>
 </svg>

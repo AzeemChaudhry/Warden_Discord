@@ -55,3 +55,26 @@ jobs:
       - name: Shipped migrations are untouched
         if: github.event_name == 'pull_request'
         run: uv run python scripts/check_migrations.py origin/${{ github.base_ref }}
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: warden:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Image starts and fails cleanly without a token
+        run: |
+          set +e
+          output=$(docker run --rm warden:ci 2>&1)
+          status=$?
+          echo "$output"
+          [ "$status" -ne 0 ] && echo "$output" | grep -q "DISCORD_TOKEN is not set"

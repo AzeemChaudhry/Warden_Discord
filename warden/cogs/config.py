@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import io
+import json
 from itertools import groupby
 from typing import TYPE_CHECKING
 
@@ -7,10 +9,21 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from ..settings import REGISTRY, SettingsError, SettingType, format_value, get_setting, parse_value
+from ..settings import (
+    BACKUP_FORMAT,
+    REGISTRY,
+    SettingsError,
+    SettingType,
+    format_value,
+    get_setting,
+    parse_value,
+    validate_stored,
+)
 
 if TYPE_CHECKING:
     from ..bot import Warden
+
+MAX_BACKUP_BYTES = 256 * 1024
 
 
 @app_commands.guild_only()
@@ -124,6 +137,64 @@ class Config(
         await interaction.response.send_message(
             f"`{key}` is back to its default: {format_value(setting, setting.default)}.", ephemeral=True
         )
+
+    @app_commands.command(name="export", description="Download this server's settings as a backup file")
+    async def export(self, interaction: discord.Interaction) -> None:
+        overrides = await self.bot.settings.overrides(interaction.guild_id)
+        payload = {
+            "format": BACKUP_FORMAT,
+            "guild_id": str(interaction.guild_id),
+            "exported_at": discord.utils.utcnow().isoformat(timespec="seconds"),
+            "settings": dict(sorted(overrides.items())),
+        }
+        data = io.BytesIO(json.dumps(payload, indent=2).encode())
+        await interaction.response.send_message(
+            f"{len(overrides)} changed setting(s). Defaults aren't included. Restore with `/config import`.",
+            file=discord.File(data, filename=f"warden-settings-{interaction.guild_id}.json"),
+            ephemeral=True,
+        )
+
+    @app_commands.command(name="import", description="Restore settings from a /config export file")
+    @app_commands.describe(file="A file made by /config export")
+    async def import_(self, interaction: discord.Interaction, file: discord.Attachment) -> None:
+        if file.size > MAX_BACKUP_BYTES:
+            await interaction.response.send_message("That file is too large to be a backup.", ephemeral=True)
+            return
+        await interaction.response.defer(ephemeral=True)
+        try:
+            payload = json.loads(await file.read())
+            entries = payload["settings"]
+            if payload.get("format") != BACKUP_FORMAT or not isinstance(entries, dict):
+                raise ValueError
+        except (ValueError, KeyError, TypeError, UnicodeDecodeError):
+            await interaction.followup.send("That isn't a Warden settings backup.", ephemeral=True)
+            return
+
+        guild = interaction.guild
+        applied, skipped = 0, []
+        for key, raw in entries.items():
+            try:
+                setting = get_setting(key)
+                value = validate_stored(setting, raw)
+            except SettingsError as exc:
+                skipped.append(f"`{key}`: {exc}")
+                continue
+            # Channel and role IDs only exist in the server they came from.
+            if value is not None and setting.type is SettingType.CHANNEL and guild.get_channel(value) is None:
+                skipped.append(f"`{key}`: channel not in this server")
+                continue
+            if value is not None and setting.type is SettingType.ROLE and guild.get_role(value) is None:
+                skipped.append(f"`{key}`: role not in this server")
+                continue
+            await self.bot.settings.set(guild.id, setting, value)
+            applied += 1
+
+        message = f"Restored {applied} setting(s)."
+        if skipped:
+            shown = "\n".join(f"- {line}" for line in skipped[:15])
+            more = f"\n…and {len(skipped) - 15} more" if len(skipped) > 15 else ""
+            message += f" Skipped {len(skipped)}:\n{shown}{more}"
+        await interaction.followup.send(message[:2000], ephemeral=True)
 
 
 async def setup(bot: Warden) -> None:

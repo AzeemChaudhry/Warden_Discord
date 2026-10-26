@@ -1,13 +1,18 @@
+import json
+
 import pytest
 
 from warden import modlog  # noqa: F401  registers modlog.channel
+from warden.cogs import moderation  # noqa: F401  registers moderation.*
 from warden.settings import (
     REGISTRY,
     Setting,
     SettingsError,
     SettingsService,
     SettingType,
+    get_setting,
     parse_value,
+    validate_stored,
 )
 
 FLAG = Setting("test.flag", SettingType.BOOL, False, "")
@@ -94,3 +99,50 @@ def test_reregistering_replaces():
     second = register(Setting("test.reload", SettingType.INT, 2, "new"))
     assert REGISTRY["test.reload"] is second and first is not second
     del REGISTRY["test.reload"]
+
+
+@pytest.mark.parametrize(
+    "setting, raw, expected",
+    [
+        (FLAG, True, True),
+        (LIMIT, 7, 7),
+        (CHANNEL, 123456789012345678, 123456789012345678),
+        (CHANNEL, "123456789012345678", 123456789012345678),
+        (CHANNEL, None, None),
+        (Setting("test.words", SettingType.LIST, [], ""), [" Foo", "bar", "foo", ""], ["foo", "bar"]),
+    ],
+)
+def test_validate_stored_accepts(setting, raw, expected):
+    assert validate_stored(setting, raw) == expected
+
+
+@pytest.mark.parametrize(
+    "setting, raw",
+    [
+        (FLAG, "yes"),  # backups hold real JSON booleans
+        (LIMIT, True),  # bool is an int subclass; don't let it through
+        (LIMIT, 11),
+        (CHANNEL, "general"),
+        (Setting("test.words", SettingType.LIST, [], ""), "a, b"),
+    ],
+)
+def test_validate_stored_rejects(setting, raw):
+    with pytest.raises(SettingsError):
+        validate_stored(setting, raw)
+
+
+async def test_overrides_and_backup_round_trip(db):
+    source = SettingsService(db)
+    assert await source.overrides(1) == {}
+    await source.set(1, "modlog.channel", 555555555555555555)
+    await source.set(1, "moderation.require_reason", True)
+
+    overrides = await source.overrides(1)
+    assert overrides == {"modlog.channel": 555555555555555555, "moderation.require_reason": True}
+
+    # Same path /config import takes: JSON text in, validated values out.
+    restored = json.loads(json.dumps(overrides))
+    target = SettingsService(db)
+    for key, raw in restored.items():
+        await target.set(2, key, validate_stored(get_setting(key), raw))
+    assert await target.overrides(2) == overrides

@@ -153,6 +153,39 @@ def format_value(setting: Setting, value: Any) -> str:
     return f"`{value}`"
 
 
+BACKUP_FORMAT = 1
+_MAX_TEXT = 2000
+
+
+def validate_stored(setting: Setting, value: Any) -> Any:
+    """Check a value read from a backup file and return it in stored form.
+
+    Unlike ``parse_value`` this takes JSON values (bools, numbers, lists), not
+    command input. Raises ``SettingsError`` if the value doesn't fit the setting.
+    """
+    kind = setting.type
+    if value is None and kind in (SettingType.STRING, SettingType.CHANNEL, SettingType.ROLE):
+        return None
+    if kind is SettingType.BOOL and isinstance(value, bool):
+        return value
+    if kind is SettingType.INT and isinstance(value, int) and not isinstance(value, bool):
+        if setting.min_value is not None and value < setting.min_value:
+            raise SettingsError(f"below the minimum of {setting.min_value}")
+        if setting.max_value is not None and value > setting.max_value:
+            raise SettingsError(f"above the maximum of {setting.max_value}")
+        return value
+    if kind is SettingType.STRING and isinstance(value, str) and len(value) <= _MAX_TEXT:
+        return value
+    if kind in (SettingType.CHANNEL, SettingType.ROLE):
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value
+        if isinstance(value, str) and value.isdigit():
+            return int(value)
+    if kind is SettingType.LIST and isinstance(value, list) and all(isinstance(v, str) for v in value):
+        return list(dict.fromkeys(v.strip().lower() for v in value if v.strip()))
+    raise SettingsError(f"expected {kind.value}, got {type(value).__name__}")
+
+
 def _copy(value: Any) -> Any:
     # List defaults are shared objects; hand out copies so callers can't mutate them.
     return list(value) if isinstance(value, list) else value
@@ -182,6 +215,11 @@ class SettingsService:
     async def get_all(self, guild_id: int) -> dict[str, Any]:
         stored = await self._load(guild_id)
         return {key: _copy(stored.get(key, s.default)) for key, s in REGISTRY.items()}
+
+    async def overrides(self, guild_id: int) -> dict[str, Any]:
+        """Only the settings this guild changed from their defaults."""
+        stored = await self._load(guild_id)
+        return {key: _copy(value) for key, value in stored.items() if key in REGISTRY}
 
     async def set(self, guild_id: int, key: str | Setting, value: Any) -> None:
         key = get_setting(key).key

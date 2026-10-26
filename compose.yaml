@@ -1,0 +1,13 @@
+services:
+  warden:
+    build: .
+    image: warden:latest
+    env_file: .env
+    environment:
+      DATABASE_PATH: /data/warden.db
+    volumes:
+      - warden-data:/data
+    restart: unless-stopped
+
+volumes:
+  warden-data:

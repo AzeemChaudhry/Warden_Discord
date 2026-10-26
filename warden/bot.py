@@ -21,6 +21,7 @@ EXTENSIONS = (
     "warden.cogs.onboarding",
     "warden.cogs.leveling",
     "warden.cogs.perks",
+    "warden.cogs.status",
 )
 
 

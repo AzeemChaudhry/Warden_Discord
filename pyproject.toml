@@ -1,7 +1,7 @@
 [project]
 name = "warden"
 version = "0.1.0"
-description = "An all-in-one Discord guardian: moderation, automod, onboarding, leveling and perks"
+description = "Self-hosted Discord bot for moderation, automod, onboarding and leveling"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
